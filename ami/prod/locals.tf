@@ -1,5 +1,5 @@
 locals {
-    # Tags
-    region = "us-east-1"
-    environment = "Prod"
+  # Tags
+  region      = "us-east-1"
+  environment = "Prod"
 }
