@@ -64,7 +64,7 @@ variable "point_in_time_recovery" {
 variable "table_hash_name" {
   type        = string
   description = "Name of the attribute - Hash"
-  default     = "Hash"
+  default     = "Path"
 }
 
 variable "table_hash_type" {
@@ -76,7 +76,7 @@ variable "table_hash_type" {
 variable "table_range_name" {
   type        = string
   description = "Name of the attribute - Range"
-  default     = "Range"
+  default     = "Key"
 }
 
 variable "table_range_type" {

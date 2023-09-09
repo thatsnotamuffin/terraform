@@ -55,6 +55,12 @@ variable "parameter_group_name" {
 }
 
 # Storage
+variable "allocated_storage" {
+  type        = number
+  description = "Storage in GB"
+  default     = 100
+}
+
 variable "storage_encrypted" {
   type        = bool
   description = "Encrypt storage"
