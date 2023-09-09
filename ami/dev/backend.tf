@@ -1,6 +1,6 @@
 # terraform {
 #   backend "s3" {
-#     bucket         = "terraform-dev"
+#     bucket         = "thatsnotamuffin-dev"
 #     key            = "global/ami/terraform.tfstate"
 #     region         = "us-east-1"
 #     encrypt        = true
