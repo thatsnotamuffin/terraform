@@ -28,10 +28,10 @@ resource "aws_iam_user_group_membership" "user_1_membership" {
     aws_iam_group.developers
   ]
 
-  depends_on = [ 
+  depends_on = [
     aws_iam_user.user_1,
     aws_iam_group.developers
-   ]
+  ]
 }
 
 resource "aws_iam_user_group_membership" "user_2_membership" {
@@ -41,10 +41,10 @@ resource "aws_iam_user_group_membership" "user_2_membership" {
     aws_iam_group.developers
   ]
 
-  depends_on = [ 
+  depends_on = [
     aws_iam_user.user_2,
     aws_iam_group.developers
-   ]
+  ]
 }
 
 resource "aws_iam_user_group_membership" "user_3_membership" {
@@ -54,10 +54,10 @@ resource "aws_iam_user_group_membership" "user_3_membership" {
     aws_iam_group.developers
   ]
 
-  depends_on = [ 
+  depends_on = [
     aws_iam_user.user_3,
     aws_iam_group.developers
-   ]
+  ]
 }
 
 # Infrastructure Engineers
@@ -90,10 +90,10 @@ resource "aws_iam_user_group_membership" "user_4_membership" {
     aws_iam_group.developers
   ]
 
-  depends_on = [ 
+  depends_on = [
     aws_iam_user.user_4,
     aws_iam_group.developers
-   ]
+  ]
 }
 
 resource "aws_iam_user_group_membership" "user_5_membership" {
@@ -103,10 +103,10 @@ resource "aws_iam_user_group_membership" "user_5_membership" {
     aws_iam_group.developers
   ]
 
-  depends_on = [ 
+  depends_on = [
     aws_iam_user.user_5,
     aws_iam_group.developers
-   ]
+  ]
 }
 
 resource "aws_iam_user_group_membership" "user_6_membership" {
@@ -116,8 +116,8 @@ resource "aws_iam_user_group_membership" "user_6_membership" {
     aws_iam_group.developers
   ]
 
-  depends_on = [ 
+  depends_on = [
     aws_iam_user.user_6,
     aws_iam_group.developers
-   ]
+  ]
 }
