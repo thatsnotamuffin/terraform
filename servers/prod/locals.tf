@@ -60,7 +60,7 @@ data "aws_ebs_volume" "es_vol_3" {
 
   filter {
     name   = "tag:Name"
-    values = ["data-vol-arugula-es-1-kastage"]
+    values = ["data-vol-arugula-es-1-${local.domain_environment}"]
   }
 }
 
