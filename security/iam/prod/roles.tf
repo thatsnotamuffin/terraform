@@ -109,3 +109,24 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_all_access_attach" {
     aws_iam_policy.eks_all_access_policy
   ]
 }
+
+# Lifecycle
+resource "aws_iam_role" "lifecycle_role" {
+  name = "lifecycle-role"
+
+  tags = {
+    Name        = "lifecycle-role"
+    Environment = "All"
+    Managed_By  = local.managed_by
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "dlm_lifecycle_policy_attach" {
+  role       = aws_iam_role.lifecycle_role.name
+  policy_arn = aws_iam_policy.dlm_lifecycle_policy.arn
+
+  depends_on = [
+    aws_iam_role.lifecycle_role,
+    aws_iam_policy.dlm_lifecycle_policy
+  ]
+}
