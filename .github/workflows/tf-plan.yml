@@ -1,0 +1,550 @@
+name: "Terraform Plan"
+
+on:
+    pull_request:
+        branches:
+            - main
+
+jobs:
+    terraform_plan_dev:
+        if: contains(github.event.pull_request.labels.*.name, 'dev')
+        name: "Terraform Plan Dev"
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                shell: bash
+                working-directory: ./
+        
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+              with:
+                ref: ${{ github.event.pull_request.head.sha }}
+
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                aws-region: ${{ secrets.AWS_REGION }}
+
+            - name: Setup Terraform
+              uses: hashicorp/setup-terraform@v2
+              with:
+                terraform_version: 1.4.6
+
+            # AMI
+            - name: Terraform Init - AMI
+              id: init_ami
+              run: terraform -chdir=ami/dev init
+              continue-on-error: true
+
+            - name: Terraform Plan - AMI
+              id: plan_ami
+              run: terraform -chdir=ami/dev plan
+              continue-on-error: true
+
+            - name: AMI Status Report
+              id: ami_status_report
+              run: |
+                if [ "${{ steps.init_ami.outcome }}" != "success" ] || [ "${{ steps.plan_ami.outcome }}" != "success" ]; then
+                    echo "::set-output name=status::\:warning\:"
+                else
+                    echo "::set-output name=status::\:heavy_check_mark\:"
+                fi
+
+            # Databases
+            - name: Terraform Init - Databases
+              id: init_databases
+              run: terraform -chdir=databases/dev init
+              continue-on-error: true
+
+            - name: Terraform Plan - Databases
+              id: plan_databases
+              run: terraform -chdir=databases/dev plan
+              continue-on-error: true
+
+            - name: Databases Status Report
+              id: databases_status_report
+              run: |
+                if [ "${{ steps.init_databases.outcome }}" != "success" ] || [ "${{ steps.plan_databases.outcome }}" != "success" ]; then
+                    echo "::set-output name=status::\:warning\:"
+                else
+                    echo "::set-output name=status::\:heavy_check_mark\:"
+                fi
+
+            # KMS
+            - name: Terraform Init - KMS
+              id: init_kms
+              run: terraform -chdir=security/kms/dev init
+              continue-on-error: true
+            
+            - name: Terraform Plan - KMS
+              id: plan_kms
+              run: terraform -chdir=security/kms/dev plan
+              continue-on-error: true
+
+            - name: KMS Status Report
+              id: kms_status_report
+              run: |
+                if [ "${{ steps.init_kms.outcome }}" != "success" ] || [ "${{ steps.plan_kms.outcome }}" != "success" ]; then
+                    echo "::set-output name=status::\:warning\:"
+                else
+                    echo "::set-output name=status::\:heavy_check_mark\:"
+                fi
+
+            # Servers
+            - name: Terraform Init - Servers
+              id: init_servers
+              run: terraform -chdir=servers/dev init
+              continue-on-error: true
+            
+            - name: Terraform Plan - Servers
+              id: plan_servers
+              run: terraform -chdir=servers/dev plan
+              continue-on-error: true
+
+            - name: Servers Status Report
+              id: servers_status_report
+              run: |
+                if [ "${{ steps.init_servers.outcome }}" != "success" ] || [ "${{ steps.plan_servers.outcome }}" != "success" ]; then
+                    echo "::set-output name=status::\:warning\:"
+                else
+                    echo "::set-output name=status::\:heavy_check_mark\:"
+                fi
+
+            # EBS
+            - name: Terraform Init - EBS
+              id: init_ebs
+              run: terraform -chdir=storage/ebs/dev init
+              continue-on-error: true
+            
+            - name: Terraform Plan - EBS
+              id: plan_ebs
+              run: terraform -chdir=storage/ebs/dev plan
+              continue-on-error: true
+
+            - name: EBS Status Report
+              id: ebs_status_report
+              run: |
+                if [ "${{ steps.init_ebs.outcome }}" != "success" ] || [ "${{ steps.plan_ebs.outcome }}" != "success" ]; then
+                    echo "::set-output name=status::\:warning\:"
+                else
+                    echo "::set-output name=status::\:heavy_check_mark\:"
+                fi
+
+            # Lifecycle
+            - name: Terraform Init - Lifecycle
+              id: init_lifecycle
+              run: terraform -chdir=storage/lifecycle/dev init
+              continue-on-error: true
+            
+            - name: Terraform Plan - Lifecycle
+              id: plan_lifecycle
+              run: terraform -chdir=storage/lifecycle/dev plan
+              continue-on-error: true
+
+            - name: Lifecycle Status Report
+              id: lifecycle_status_report
+              run: |
+                if [ "${{ steps.init_lifecycle.outcome }}" != "success" ] || [ "${{ steps.plan_lifecycle.outcome }}" != "success" ]; then
+                    echo "::set-output name=status::\:warning\:"
+                else
+                    echo "::set-output name=status::\:heavy_check_mark\:"
+                fi
+
+            # S3
+            - name: Terraform Init - S3
+              id: init_s3
+              run: terraform -chdir=storage/s3/dev init
+              continue-on-error: true
+            
+            - name: Terraform Plan - S3
+              id: plan_s3
+              run: terraform -chdir=storage/s3/dev plan
+              continue-on-error: true
+
+            - name: S3 Status Report
+              id: s3_status_report
+              run: |
+                if [ "${{ steps.init_s3.outcome }}" != "success" ] || [ "${{ steps.plan_s3.outcome }}" != "success" ]; then
+                    echo "::set-output name=status::\:warning\:"
+                else
+                    echo "::set-output name=status::\:heavy_check_mark\:"
+                fi
+
+            - name: Terraform Report
+              uses: thollander/actions-comment-pull-request@v2
+              with:
+                message: |
+                    AMI Validation - Dev ${{ steps.ami_status_report.outputs.status }}
+                    Databases Validation - Dev ${{ steps.databases_status_report.outputs.status }}
+                    KMS Validation - Dev ${{ steps.kms_status_report.outputs.status }}
+                    Servers Validation - Dev ${{ steps.servers_status_report.outputs.status }}
+                    EBS Validation - Dev ${{ steps.ebs_status_report.outputs.status }}
+                    Lifecycle Validation - Dev ${{ steps.lifecycle_status_report.outputs.status }}
+                    S3 Validation - Dev ${{ steps.s3_status_report.outputs.status }}
+                comment_tag: execution
+                mode: recreate
+
+    terraform_plan_pre_prod:
+        if: contains(github.event.pull_request.labels.*.name, 'pre-prod')
+        name: "Terraform Plan Pre-Production"
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                shell: bash
+                working-directory: ./
+        
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+              with:
+                ref: ${{ github.event.pull_request.head.sha }}
+
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                aws-region: ${{ secrets.AWS_REGION }}
+
+            - name: Setup Terraform
+              uses: hashicorp/setup-terraform@v2
+              with:
+                terraform_version: 1.4.6
+
+            # AMI
+            - name: Terraform Init - AMI
+              id: init_ami
+              run: terraform -chdir=ami/pre-prod init
+              continue-on-error: true
+
+            - name: Terraform Plan - AMI
+              id: plan_ami
+              run: terraform -chdir=ami/pre-prod plan
+              continue-on-error: true
+
+            - name: AMI Status Report
+              id: ami_status_report
+              run: |
+                if [ "${{ steps.init_ami.outcome }}" != "success" ] || [ "${{ steps.plan_ami.outcome }}" != "success" ]; then
+                    echo "::set-output name=status::\:warning\:"
+                else
+                    echo "::set-output name=status::\:heavy_check_mark\:"
+                fi
+
+            # Databases
+            - name: Terraform Init - Databases
+              id: init_databases
+              run: terraform -chdir=databases/pre-prod init
+              continue-on-error: true
+
+            - name: Terraform Plan - Databases
+              id: plan_databases
+              run: terraform -chdir=databases/pre-prod plan
+              continue-on-error: true
+
+            - name: Databases Status Report
+              id: databases_status_report
+              run: |
+                if [ "${{ steps.init_databases.outcome }}" != "success" ] || [ "${{ steps.plan_databases.outcome }}" != "success" ]; then
+                    echo "::set-output name=status::\:warning\:"
+                else
+                    echo "::set-output name=status::\:heavy_check_mark\:"
+                fi
+
+            # KMS
+            - name: Terraform Init - KMS
+              id: init_kms
+              run: terraform -chdir=security/kms/pre-prod init
+              continue-on-error: true
+            
+            - name: Terraform Plan - KMS
+              id: plan_kms
+              run: terraform -chdir=security/kms/pre-prod plan
+              continue-on-error: true
+
+            - name: KMS Status Report
+              id: kms_status_report
+              run: |
+                if [ "${{ steps.init_kms.outcome }}" != "success" ] || [ "${{ steps.plan_kms.outcome }}" != "success" ]; then
+                    echo "::set-output name=status::\:warning\:"
+                else
+                    echo "::set-output name=status::\:heavy_check_mark\:"
+                fi
+
+            # Servers
+            - name: Terraform Init - Servers
+              id: init_servers
+              run: terraform -chdir=servers/pre-prod init
+              continue-on-error: true
+            
+            - name: Terraform Plan - Servers
+              id: plan_servers
+              run: terraform -chdir=servers/pre-prod plan
+              continue-on-error: true
+
+            - name: Servers Status Report
+              id: servers_status_report
+              run: |
+                if [ "${{ steps.init_servers.outcome }}" != "success" ] || [ "${{ steps.plan_servers.outcome }}" != "success" ]; then
+                    echo "::set-output name=status::\:warning\:"
+                else
+                    echo "::set-output name=status::\:heavy_check_mark\:"
+                fi
+
+            # EBS
+            - name: Terraform Init - EBS
+              id: init_ebs
+              run: terraform -chdir=storage/ebs/pre-prod init
+              continue-on-error: true
+            
+            - name: Terraform Plan - EBS
+              id: plan_ebs
+              run: terraform -chdir=storage/ebs/pre-prod plan
+              continue-on-error: true
+
+            - name: EBS Status Report
+              id: ebs_status_report
+              run: |
+                if [ "${{ steps.init_ebs.outcome }}" != "success" ] || [ "${{ steps.plan_ebs.outcome }}" != "success" ]; then
+                    echo "::set-output name=status::\:warning\:"
+                else
+                    echo "::set-output name=status::\:heavy_check_mark\:"
+                fi
+
+            # Lifecycle
+            - name: Terraform Init - Lifecycle
+              id: init_lifecycle
+              run: terraform -chdir=storage/lifecycle/pre-prod init
+              continue-on-error: true
+            
+            - name: Terraform Plan - Lifecycle
+              id: plan_lifecycle
+              run: terraform -chdir=storage/lifecycle/pre-prod plan
+              continue-on-error: true
+
+            - name: Lifecycle Status Report
+              id: lifecycle_status_report
+              run: |
+                if [ "${{ steps.init_lifecycle.outcome }}" != "success" ] || [ "${{ steps.plan_lifecycle.outcome }}" != "success" ]; then
+                    echo "::set-output name=status::\:warning\:"
+                else
+                    echo "::set-output name=status::\:heavy_check_mark\:"
+                fi
+
+            # S3
+            - name: Terraform Init - S3
+              id: init_s3
+              run: terraform -chdir=storage/s3/pre-prod init
+              continue-on-error: true
+            
+            - name: Terraform Plan - S3
+              id: plan_s3
+              run: terraform -chdir=storage/s3/pre-prod plan
+              continue-on-error: true
+
+            - name: S3 Status Report
+              id: s3_status_report
+              run: |
+                if [ "${{ steps.init_s3.outcome }}" != "success" ] || [ "${{ steps.plan_s3.outcome }}" != "success" ]; then
+                    echo "::set-output name=status::\:warning\:"
+                else
+                    echo "::set-output name=status::\:heavy_check_mark\:"
+                fi
+
+            - name: Terraform Report
+              uses: thollander/actions-comment-pull-request@v2
+              with:
+                message: |
+                    AMI Validation - Pre-Prod ${{ steps.ami_status_report.outputs.status }}
+                    Databases Validation - Pre-Prod ${{ steps.databases_status_report.outputs.status }}
+                    KMS Validation - Pre-Prod ${{ steps.kms_status_report.outputs.status }}
+                    Servers Validation - Pre-Prod ${{ steps.servers_status_report.outputs.status }}
+                    EBS Validation - Pre-Prod ${{ steps.ebs_status_report.outputs.status }}
+                    Lifecycle Validation - Pre-Prod ${{ steps.lifecycle_status_report.outputs.status }}
+                    S3 Validation - Pre-Prod ${{ steps.s3_status_report.outputs.status }}
+                comment_tag: execution
+                mode: recreate
+
+    terraform_plan_prod:
+        if: contains(github.event.pull_request.labels.*.name, 'prod')
+        name: "Terraform Plan Production"
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                shell: bash
+                working-directory: ./
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+              with:
+                ref: ${{ github.event.pull_request.head.sha }}
+
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                aws-region: ${{ secrets.AWS_REGION }}
+
+            - name: Setup Terraform
+              uses: hashicorp/setup-terraform@v2
+              with:
+                terraform_version: 1.4.6
+
+            # AMI
+            - name: Terraform Init - AMI
+              id: init_ami
+              run: terraform -chdir=ami/prod init
+              continue-on-error: true
+
+            - name: Terraform Plan - AMI
+              id: plan_ami
+              run: terraform -chdir=ami/prod plan
+              continue-on-error: true
+
+            - name: AMI Status Report
+              id: ami_status_report
+              run: |
+                if [ "${{ steps.init_ami.outcome }}" != "success" ] || [ "${{ steps.plan_ami.outcome }}" != "success" ]; then
+                    echo "::set-output name=status::\:warning\:"
+                else
+                    echo "::set-output name=status::\:heavy_check_mark\:"
+                fi
+
+            # Databases
+            - name: Terraform Init - Databases
+              id: init_databases
+              run: terraform -chdir=databases/prod init
+              continue-on-error: true
+
+            - name: Terraform Plan - Databases
+              id: plan_databases
+              run: terraform -chdir=databases/prod plan
+              continue-on-error: true
+
+            - name: Databases Status Report
+              id: databases_status_report
+              run: |
+                if [ "${{ steps.init_databases.outcome }}" != "success" ] || [ "${{ steps.plan_databases.outcome }}" != "success" ]; then
+                    echo "::set-output name=status::\:warning\:"
+                else
+                    echo "::set-output name=status::\:heavy_check_mark\:"
+                fi
+
+            # KMS
+            - name: Terraform Init - KMS
+              id: init_kms
+              run: terraform -chdir=security/kms/prod init
+              continue-on-error: true
+
+            - name: Terraform Plan - KMS
+              id: plan_kms
+              run: terraform -chdir=security/kms/prod plan
+              continue-on-error: true
+
+            - name: KMS Status Report
+              id: kms_status_report
+              run: |
+                if [ "${{ steps.init_kms.outcome }}" != "success" ] || [ "${{ steps.plan_kms.outcome }}" != "success" ]; then
+                    echo "::set-output name=status::\:warning\:"
+                else
+                    echo "::set-output name=status::\:heavy_check_mark\:"
+                fi
+
+            # Servers
+            - name: Terraform Init - Servers
+              id: init_servers
+              run: terraform -chdir=servers/prod init
+              continue-on-error: true
+
+            - name: Terraform Plan - Servers
+              id: plan_servers
+              run: terraform -chdir=servers/prod plan
+              continue-on-error: true
+
+            - name: Servers Status Report
+              id: servers_status_report
+              run: |
+                if [ "${{ steps.init_servers.outcome }}" != "success" ] || [ "${{ steps.plan_servers.outcome }}" != "success" ]; then
+                    echo "::set-output name=status::\:warning\:"
+                else
+                    echo "::set-output name=status::\:heavy_check_mark\:"
+                fi
+
+            # EBS
+            - name: Terraform Init - EBS
+              id: init_ebs
+              run: terraform -chdir=storage/ebs/prod init
+              continue-on-error: true
+
+            - name: Terraform Plan - EBS
+              id: plan_ebs
+              run: terraform -chdir=storage/ebs/prod plan
+              continue-on-error: true
+
+            - name: EBS Status Report
+              id: ebs_status_report
+              run: |
+                if [ "${{ steps.init_ebs.outcome }}" != "success" ] || [ "${{ steps.plan_ebs.outcome }}" != "success" ]; then
+                    echo "::set-output name=status::\:warning\:"
+                else
+                    echo "::set-output name=status::\:heavy_check_mark\:"
+                fi
+
+            # Lifecycle
+            - name: Terraform Init - Lifecycle
+              id: init_lifecycle
+              run: terraform -chdir=storage/lifecycle/prod init
+              continue-on-error: true
+
+            - name: Terraform Plan - Lifecycle
+              id: plan_lifecycle
+              run: terraform -chdir=storage/lifecycle/prod plan
+              continue-on-error: true
+
+            - name: Lifecycle Status Report
+              id: lifecycle_status_report
+              run: |
+                if [ "${{ steps.init_lifecycle.outcome }}" != "success" ] || [ "${{ steps.plan_lifecycle.outcome }}" != "success" ]; then
+                    echo "::set-output name=status::\:warning\:"
+                else
+                    echo "::set-output name=status::\:heavy_check_mark\:"
+                fi
+
+            # S3
+            - name: Terraform Init - S3
+              id: init_s3
+              run: terraform -chdir=storage/s3/prod init
+              continue-on-error: true
+
+            - name: Terraform Plan - S3
+              id: plan_s3
+              run: terraform -chdir=storage/s3/prod plan
+              continue-on-error: true
+
+            - name: S3 Status Report
+              id: s3_status_report
+              run: |
+                if [ "${{ steps.init_s3.outcome }}" != "success" ] || [ "${{ steps.plan_s3.outcome }}" != "success" ]; then
+                    echo "::set-output name=status::\:warning\:"
+                else
+                    echo "::set-output name=status::\:heavy_check_mark\:"
+                fi
+
+            - name: Terraform Report
+              uses: thollander/actions-comment-pull-request@v2
+              with:
+                message: |
+                    AMI Validation - Prod ${{ steps.ami_status_report.outputs.status }}
+                    Databases Validation - Prod ${{ steps.databases_status_report.outputs.status }}
+                    KMS Validation - Prod ${{ steps.kms_status_report.outputs.status }}
+                    Servers Validation - Prod ${{ steps.servers_status_report.outputs.status }}
+                    EBS Validation - Prod ${{ steps.ebs_status_report.outputs.status }}
+                    Lifecycle Validation - Prod ${{ steps.lifecycle_status_report.outputs.status }}
+                    S3 Validation - Prod ${{ steps.s3_status_report.outputs.status }}
+                comment_tag: execution
+                mode: recreate
