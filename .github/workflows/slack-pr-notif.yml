@@ -1,0 +1,81 @@
+name: Slack PR Notification
+run-name: Pull Request Notification
+
+on:
+  pull_request:
+    types:
+      - opened
+      - closed
+
+jobs:
+  slack_notif_open:
+    if: github.event.action == 'opened'
+    name: Slack Channel PR Notification - Opened
+    runs-on: ubuntu-latest
+    steps:
+      - name: Slack Info - Start
+        id: slack_notification
+        run: |
+          slack_message="A Pull Request has been opened by @${{ github.actor }}
+          PR Link: ${{ github.event.pull_request.html_url }}"
+
+          echo 'slack-message<<EOF' >> $GITHUB_OUTPUT
+          echo "$slack_message" >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
+
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@master
+        env:
+          SLACK_CHANNEL: developer
+          SLACK_MESSAGE: ${{ steps.slack_notification.outputs.slack-message }}
+          SLACK_TITLE: 'New Pull Request'
+          SLACK_USERNAME: 'Super Awesome Git Bot 3000'
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  slack_notif_closed:
+    if: github.event.action == 'closed' && !github.event.pull_request.merged
+    name: Slack Channel PR Notification - Closed
+    runs-on: ubuntu-latest
+    steps:
+      - name: Slack Info - Start
+        id: slack_notification
+        run: |
+          slack_message="A Pull Request has been closed but not merged
+          PR Link: ${{ github.event.pull_request.html_url }}"
+
+          echo 'slack-message<<EOF' >> $GITHUB_OUTPUT
+          echo "$slack_message" >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
+
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@master
+        env:
+          SLACK_CHANNEL: developer
+          SLACK_MESSAGE: ${{ steps.slack_notification.outputs.slack-message }}
+          SLACK_TITLE: 'Closed Pull Request without Merge'
+          SLACK_USERNAME: 'Super Awesome Git Bot 3000'
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  slack_notif_merged:
+    if: github.event.action == 'closed' && github.event.pull_request.merged
+    name: Slack Channel PR Notification - Merged
+    runs-on: ubuntu-latest
+    steps:
+      - name: Slack Info - Start
+        id: slack_notification
+        run: |
+          slack_message="A Pull Request has been merged by @${{ github.actor }}
+          PR Link: ${{ github.event.pull_request.html_url }}"
+
+          echo 'slack-message<<EOF' >> $GITHUB_OUTPUT
+          echo "$slack_message" >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
+
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@master
+        env:
+          SLACK_CHANNEL: developer
+          SLACK_MESSAGE: ${{ steps.slack_notification.outputs.slack-message }}
+          SLACK_TITLE: 'Merged Pull Request'
+          SLACK_USERNAME: 'Super Awesome Git Bot 3000'
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
