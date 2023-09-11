@@ -59,6 +59,6 @@ variable "restrict_public_buckets" {
 # Bucket Versioning
 variable "status" {
   type        = string
-  description = "Enable versioning - Enabled - Disabled - Suspeneded"
+  description = "Enable versioning - Enabled - Disabled - Suspended"
   default     = null
 }

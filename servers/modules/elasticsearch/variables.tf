@@ -90,7 +90,7 @@ variable "data_vol_ids" {
 
 variable "data_vol_destroy" {
   type        = bool
-  description = "Set this to true if  you want to detach the volume from the instance at destroy time"
+  description = "Set this to true if you want to detach the volume from the instance at destroy time"
   default     = true
 }
 

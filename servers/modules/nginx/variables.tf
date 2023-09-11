@@ -1,7 +1,7 @@
 # Tags
 variable "environment" {
   type        = string
-  description = "The environment the resources are being created for; Production - Staging - Development"
+  description = "The environment the resources are being created for; Production - Pre-Production - Development"
   default     = "Development"
 }
 
@@ -13,7 +13,7 @@ variable "region" {
 
 variable "domain_environment" {
   type        = string
-  description = "Domain environment this resource will be created in - kastage - pilyr - prod-ue1 - prod-ew1"
+  description = "Domain environment this resource will be created in - dev - pre-prod - prod"
 }
 
 # Networking and Security
@@ -29,7 +29,7 @@ variable "web_subnets" {
 
 variable "nginx_web_security_group_name" {
   type        = string
-  description = "Name of the NGINX web group to allow HTTP and HTTPS traffic - should include the environment name; pilyr, kastage, etc."
+  description = "Name of the NGINX web group to allow HTTP and HTTPS traffic"
 }
 
 variable "web_security_groups" {
