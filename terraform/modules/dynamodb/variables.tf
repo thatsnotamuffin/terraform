@@ -19,6 +19,12 @@ variable "supported_service" {
   description = "Service the DynamoDB table supports"
 }
 
+variable "tags" {
+  type        = map(string)
+  description = "A map defining user-supplied"
+  default     = {}
+}
+
 # Table Settings
 variable "table_name" {
   type        = string
@@ -29,6 +35,12 @@ variable "billing_mode" {
   type        = string
   description = "Billing mode for the DynamoDB table"
   default     = "PROVISIONED"
+}
+
+variable "table_class" {
+  type        = string
+  description = "Storage class of the table. Valid values are STANDARD and STANDARD_INFREQUENT_ACCESS"
+  default     = "STANDARD"
 }
 
 variable "read_capacity" {
@@ -52,7 +64,7 @@ variable "hash_key" {
 variable "range_key" {
   type        = string
   description = "Attribute to use as the range (sort) key"
-  default     = "Key"
+  default     = null
 }
 
 variable "point_in_time_recovery" {
@@ -61,28 +73,42 @@ variable "point_in_time_recovery" {
   default     = false
 }
 
-variable "table_hash_name" {
-  type        = string
-  description = "Name of the attribute - Hash"
-  default     = "Path"
+variable "attributes" {
+  type = list(object({
+    name = string # Name of the attribute
+    type = string # Attribute type. Valid values are S (string), N (number), B (binary)
+  }))
+  default = []
 }
 
-variable "table_hash_type" {
-  type        = string
-  description = "Attribute type - valid values are S (string) - N (number) - B (binary)"
-  default     = "S"
+variable "global_secondary_index" {
+  type        = any
+  description = "Describe a GSI for the table; subject to the normal limits on the number of GSIs, projected attributes, etc."
+  default     = {}
 }
 
-variable "table_range_name" {
-  type        = string
-  description = "Name of the attribute - Range"
-  default     = "Key"
+variable "local_secondary_index" {
+  type        = any
+  description = " Describe an LSI on the table; these can only be allocated at creation so you cannot change this definition after you have created the resource"
+  default     = {}
 }
 
-variable "table_range_type" {
+variable "replica" {
+  type        = any
+  description = "Configuration block(s) with DynamoDB Global Tables V2 (version 2019.11.21) replication configurations"
+  default     = {}
+}
+
+variable "ttl_enabled" {
+  type        = bool
+  description = "Name of the table attribute to store the TTL timestamp in. Required if enabled is true, must not be set otherwise"
+  default     = false
+}
+
+variable "ttl_attribute_name" {
   type        = string
-  description = "Attribute type - valid values are S (string) - N (number) - B (binary)"
-  default     = "S"
+  description = "Whether TTL is enabled"
+  default     = null
 }
 
 variable "table_encryption_enabled" {
