@@ -9,3 +9,11 @@ Refer to this [document](./docs/README.md) for how to perform releases. Each mer
 
 > [!NOTE]
 > Most of these modules will make use of a locals block for the tags in order to set some required tags for the resource as well as allowing a list of user supplied tags for the resource
+
+## Modules
+| Module | Description |
+| ---- | ---- |
+| [IAM OIDC](./modules/iam/oidc/) | This module creates an IAM OIDC |
+| [IAM Policy Attachment](./modules/iam/policy-attachment/) | This module attaches an already existing IAM policy to an already existing IAM role |
+| [IAM Policy](./modules/iam/policy/) | This module creates an IAM policy |
+| [IAM Role](./modules/iam/role/) | This module creates an IAM role and an instance profile if needed by setting the create_instance_profile variable to true. This will create an instance profile with the same name as the role that is created |
