@@ -1,0 +1,118 @@
+name: Terraform Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  build_matrix:
+    name: Build Example Module Matrix
+    runs-on: ubuntu-latest
+
+    outputs:
+      matrix: ${{ steps.build.outputs.matrix }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Build example module execution matrix
+        id: build
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          matrix="$(
+            find examples -mindepth 2 -maxdepth 3 -name main.tf -type f \
+              | sed 's#/main.tf$##' \
+              | sort \
+              | jq -R -s -c '
+                  split("\n")
+                  | map(select(length > 0))
+                  | map({
+                      path: .,
+                      name: (
+                        sub("^examples/"; "")
+                        | gsub("/"; " / ")
+                      )
+                    })
+                '
+          )"
+
+          echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "## Terraform example matrix"
+            echo
+            echo "Discovered example modules:"
+            echo
+            echo "$matrix" | jq -r '.[] | "- `" + .path + "`"'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  terraform_validate:
+    name: Validate ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    needs:
+      - build_matrix
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.build_matrix.outputs.matrix) }}
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ matrix.path }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4.0.1
+        with:
+          terraform_version: 1.8.4
+          terraform_wrapper: false
+
+      - name: Terraform Format Check
+        run: |
+          set -euo pipefail
+
+          echo "::group::terraform fmt -check"
+          terraform fmt -check -recursive -no-color
+          echo "::endgroup::"
+
+      - name: Terraform Init
+        run: |
+          set -euo pipefail
+
+          echo "::group::terraform init"
+          terraform init -backend=false -input=false -no-color
+          echo "::endgroup::"
+
+      - name: Terraform Validate
+        run: |
+          set -euo pipefail
+
+          echo "::group::terraform validate"
+          terraform validate -no-color
+          echo "::endgroup::"
+
+      - name: Write Job Summary
+        if: always()
+        run: |
+          {
+            echo "## Terraform validation"
+            echo
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Example | \`${{ matrix.name }}\` |"
+            echo "| Path | \`${{ matrix.path }}\` |"
+            echo "| Terraform | \`1.8.4\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
